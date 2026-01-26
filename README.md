@@ -75,37 +75,6 @@ swarm optimization under identical disaster scenarios.
 - Practical, simulator-based quantum integration suitable for NISQ-era devices
 - End-to-end system design validated through comparative evaluation
 
----
-
-+---------------------------------------------------+
-|                Disaster Dataset                   |
-|  Images | Sensor Streams | Location Metadata      |
-+---------------------------------------------------+
-                ↓
-+---------------------------------------------------+
-|            Edge AI Inference Layer                |
-|  • Disaster classification                        |
-|  • Feature extraction                             |
-+---------------------------------------------------+
-                ↓
-+----------------------+      +---------------------+
-| Classical Swarm      |      | Quantum-Enhanced    |
-| Optimization         |      | Swarm Optimization  |
-| (PSO / ACO)          |      | (QI-PSO / QAOA)     |
-+----------------------+      +---------------------+
-                ↓                        ↓
-+---------------------------------------------------+
-|         Decision Fusion & Control Layer           |
-+---------------------------------------------------+
-                ↓
-+---------------------------------------------------+
-|              Performance Metrics                  |
-|  • Convergence speed                              |
-|  • Response latency                               |
-|  • Resource utilization                           |
-|  • Fault tolerance                                |
-+---------------------------------------------------+
-
 ----
 
 ## Disclaimer
