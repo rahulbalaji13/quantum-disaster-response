@@ -77,6 +77,37 @@ swarm optimization under identical disaster scenarios.
 
 ---
 
++---------------------------------------------------+
+|                Disaster Dataset                   |
+|  Images | Sensor Streams | Location Metadata      |
++---------------------------------------------------+
+                ↓
++---------------------------------------------------+
+|            Edge AI Inference Layer                |
+|  • Disaster classification                        |
+|  • Feature extraction                             |
++---------------------------------------------------+
+                ↓
++----------------------+      +---------------------+
+| Classical Swarm      |      | Quantum-Enhanced    |
+| Optimization         |      | Swarm Optimization  |
+| (PSO / ACO)          |      | (QI-PSO / QAOA)     |
++----------------------+      +---------------------+
+                ↓                        ↓
++---------------------------------------------------+
+|         Decision Fusion & Control Layer           |
++---------------------------------------------------+
+                ↓
++---------------------------------------------------+
+|              Performance Metrics                  |
+|  • Convergence speed                              |
+|  • Response latency                               |
+|  • Resource utilization                           |
+|  • Fault tolerance                                |
++---------------------------------------------------+
+
+----
+
 ## Disclaimer
 This project uses quantum simulators and does not claim quantum hardware advantage.
 The focus is on architectural design, optimization behavior, and future-ready system
@@ -88,3 +119,5 @@ engineering.
 - Deployment on real-world edge testbeds
 - Integration with real quantum hardware as it becomes accessible
 - Extension to multi-agent drone and robotic rescue systems
+
+
