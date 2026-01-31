@@ -15,6 +15,11 @@ under uncertain and dynamic disaster scenarios.
 ---
 
 ## System Architecture
+
+
+<img width="1075" height="730" alt="Picture1" src="https://github.com/user-attachments/assets/bad9d839-4405-4f75-abbf-3b80fdef5998" />
+
+
 The system consists of five major layers:
 
 1. **IoT Sensing Layer**
@@ -75,6 +80,11 @@ swarm optimization under identical disaster scenarios.
 - Practical, simulator-based quantum integration suitable for NISQ-era devices
 - End-to-end system design validated through comparative evaluation
 
+
+
+<img width="2752" height="1536" alt="unnamed" src="https://github.com/user-attachments/assets/0e3e8853-ca73-41ba-9358-f3ab3b2ebc2c" />
+
+
 ----
 
 ## Disclaimer
@@ -90,3 +100,4 @@ engineering.
 - Extension to multi-agent drone and robotic rescue systems
 
 
+Made with ❤️ by Rahul Balaji
