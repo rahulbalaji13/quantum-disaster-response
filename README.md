@@ -17,7 +17,10 @@ under uncertain and dynamic disaster scenarios.
 ## System Architecture
 
 
-<img width="1075" height="730" alt="Picture1" src="https://github.com/user-attachments/assets/bad9d839-4405-4f75-abbf-3b80fdef5998" />
+
+![architecture](https://github.com/user-attachments/assets/6368ef3e-5d95-4ed3-842a-dda6736c1c27)
+
+
 
 
 The system consists of five major layers:
