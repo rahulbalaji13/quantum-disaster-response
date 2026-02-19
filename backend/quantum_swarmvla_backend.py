@@ -5,7 +5,7 @@ from flask_cors import CORS
 from pyngrok import ngrok
 import numpy as np
 import requests
-from datasets import load_dataset
+# from datasets import load_dataset # Optimization: Lazy load this if needed
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
@@ -15,6 +15,7 @@ import os
 import threading
 from functools import wraps
 import random
+import time
 
 # Optional Imports with Mocks
 try:
@@ -71,6 +72,7 @@ class QuantumNeuralKernel:
         
         if DEVICE_AVAILABLE:
             # 1. Feature Extractor (for Quantum Circuit)
+            print("Loading ResNet18 Feature Extractor...")
             self.feature_extractor = models.resnet18(pretrained=True)
             for param in self.feature_extractor.parameters():
                 param.requires_grad = False
@@ -79,6 +81,7 @@ class QuantumNeuralKernel:
             self.feature_extractor.eval()
             
             # 2. Classifier (for Classical Prediction & Mapping)
+            print("Loading ResNet18 Classifier...")
             self.classifier = models.resnet18(pretrained=True)
             self.classifier.eval()
             self.classifier.to(device)
@@ -210,7 +213,15 @@ class QuantumNeuralKernel:
         return top_label, float(top5_prob[0])
 
 
-nqk = QuantumNeuralKernel(n_qubits=config.N_QUBITS)
+nqk = None
+
+def get_nqk():
+    """Lazy load the Quantum Neural Kernel to prevent startup timeouts"""
+    global nqk
+    if nqk is None:
+        print("Initializing Quantum Neural Kernel (Lazy Load)...")
+        nqk = QuantumNeuralKernel(n_qubits=config.N_QUBITS)
+    return nqk
 
 # ============================================================
 # BYZANTINE CONSENSUS - Distributed Fault Tolerance
@@ -369,7 +380,7 @@ system_state = {
 
 def background_streaming():
     """Background thread to generate streaming data"""
-    import time
+    time.sleep(5) # Wait for startup
     while True:
         if system_state['is_streaming']:
             try:
@@ -451,11 +462,14 @@ def analyze_image():
             ])
             tensor = transform(image).unsqueeze(0)
             
+            # Use get_nqk() to ensure it is loaded
+            current_nqk = get_nqk()
+            
             # Extract features
-            features = nqk.extract_features(tensor)
+            features = current_nqk.extract_features(tensor)
             
             # Quantum encoding
-            qc = nqk.quantum_feature_map(features)
+            qc = current_nqk.quantum_feature_map(features)
         else:
             # Mock flow if deps missing
             tensor = None
@@ -464,7 +478,7 @@ def analyze_image():
 
         # Classification (simulated)
         # Classical Classification (Real) or Mock
-        predicted_label, classical_conf = nqk.classify_classical(tensor)
+        predicted_label, classical_conf = get_nqk().classify_classical(tensor)
         
         # Map to our disaster types if possible, else keep the label
         valid_disasters = ['Flood', 'Earthquake', 'Landslide', 'Tornado', 'Wildfire']
@@ -567,14 +581,6 @@ def stream_control():
 def setup_ngrok():
     """Setup Ngrok tunnel for public URL"""
     print("Ngrok disabled for localhost deployment.")
-    # try:
-    #     ngrok.set_auth_token(config.NGROK_AUTH_TOKEN)
-    #     public_url = ngrok.connect(5000)
-    #     print(f"\n{'='*60}")
-    #     print(f"SUCCESS Ngrok Public URL: {public_url}")
-    #     print(f"{'='*60}\n")
-    # except Exception as e:
-    #     print(f"FAILED Ngrok error: {e}")
 
 if __name__ == '__main__':
     print("""
