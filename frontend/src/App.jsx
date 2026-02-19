@@ -10,7 +10,10 @@ function App() {
     const [error, setError] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
 
-    const API_URL = process.env.REACT_APP_API_URL || 'https://quantum-disaster-response.onrender.com';
+    const BASE_URL = process.env.REACT_APP_API_URL || 'https://quantum-disaster-response.onrender.com';
+    const API_URL = BASE_URL.replace(/\/$/, ''); // Remove trailing slash if present
+
+    console.log("Using Backend API URL:", API_URL);
 
     useEffect(() => {
         fetchMetrics();
