@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './App.css';
 
 function App() {
@@ -11,12 +10,13 @@ function App() {
     const [error, setError] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
 
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.REACT_APP_API_URL || 'https://quantum-disaster-response.onrender.com';
 
     useEffect(() => {
         fetchMetrics();
         const interval = setInterval(fetchMetrics, 5000);
         return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchMetrics = async () => {
@@ -63,7 +63,7 @@ function App() {
 
     const handleStreaming = async (action) => {
         try {
-            const response = await axios.post(
+            await axios.post(
                 `${API_URL}/api/stream/control`,
                 { action }
             );
