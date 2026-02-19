@@ -1,1 +1,1 @@
-web: gunicorn quantum_swarmvla_backend:app --timeout 120
+gunicorn quantum_swarmvla_backend:app --bind 0.0.0.0:$PORT --timeout 120
