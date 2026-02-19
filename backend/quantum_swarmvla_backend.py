@@ -16,8 +16,10 @@ import time
 import sys
 
 # Initialize Flask App
+# Initialize Flask App
 app = Flask(__name__)
-CORS(app)
+# Enable CORS for all domains, allowing all headers
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configuration
 config = Config()
