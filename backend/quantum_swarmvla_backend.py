@@ -253,6 +253,13 @@ def get_alert_system():
 # ROUTES
 # ============================================================
 
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({
+        'message': 'Quantum-SwarmVLA-Edge Backend is Running!',
+        'endpoints': ['/api/health', '/api/analyze', '/api/metrics']
+    })
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({
