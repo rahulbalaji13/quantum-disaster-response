@@ -63,6 +63,14 @@ class LazyLoader:
         print("Lazy Loading: Importing Heavy Libraries...")
         global torch, models, transforms, Image, plt, sns
         
+        # Check if running on Render (which has 512MB RAM limit on free tier)
+        is_render = os.environ.get('RENDER') == 'true'
+        if is_render:
+            print("WARNING: Render environment detected. Forcing Mock Mode to prevent OOM errors.")
+            self.device = "cpu (mock)"
+            self.loaded = True
+            return
+
         try:
             import torch
             import torchvision.models as models
@@ -91,6 +99,10 @@ class LazyLoader:
         if self.qiskit:
             return self.qiskit, self.Aer
             
+        is_render = os.environ.get('RENDER') == 'true'
+        if is_render:
+            return False, None
+
         try:
             from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
             try:
