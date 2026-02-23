@@ -14,6 +14,10 @@ import threading
 import random
 import time
 import sys
+import io
+import hashlib
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Initialize Flask App
 # Initialize Flask App
@@ -132,15 +136,14 @@ class QuantumNeuralKernel:
         
         if lazy.torch:
             print("Loading ResNet18...")
-            weights = None if lazy.offline_mode else lazy.models.ResNet18_Weights.DEFAULT
-            self.feature_extractor = lazy.models.resnet18(weights=weights)
+            self.feature_extractor = lazy.models.resnet18(pretrained=True)
             for param in self.feature_extractor.parameters():
                 param.requires_grad = False
             self.feature_extractor.fc = lazy.torch.nn.Identity()
             self.feature_extractor.to(self.device)
             self.feature_extractor.eval()
             
-            self.classifier = lazy.models.resnet18(weights=weights)
+            self.classifier = lazy.models.resnet18(pretrained=True)
             self.classifier.eval()
             self.classifier.to(self.device)
         else:
@@ -336,9 +339,9 @@ def analyze_image():
 
         signal_key = hashlib.sha256(file_bytes).hexdigest()
         lazy.load_libraries() # Ensure libs are loaded
-
+        
         if lazy.torch:
-            image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
+            image = lazy.Image.open(file).convert('RGB')
             transform = lazy.transforms.Compose([
                 lazy.transforms.Resize((224, 224)),
                 lazy.transforms.ToTensor(),

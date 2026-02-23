@@ -58,7 +58,8 @@ function App() {
             setAnalysis(response.data);
             fetchMetrics();
         } catch (err) {
-            setError(err.message || 'Analysis failed');
+            const backendError = err?.response?.data?.error;
+            setError(backendError || err.message || 'Analysis failed');
         } finally {
             setLoading(false);
         }
