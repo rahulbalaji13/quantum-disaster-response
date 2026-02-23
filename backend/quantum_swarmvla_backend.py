@@ -15,6 +15,8 @@ import random
 import time
 import sys
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Initialize Flask App
 # Initialize Flask App
 app = Flask(__name__)
@@ -55,6 +57,7 @@ class LazyLoader:
         self.sns = None
         self.device = "cpu"
         self.loaded = False
+        self.offline_mode = os.environ.get('OFFLINE_MODE', 'true').lower() == 'true'
 
     def load_libraries(self):
         if self.loaded:
@@ -88,6 +91,8 @@ class LazyLoader:
             
             self.device = torch.device(config.DEVICE if torch.cuda.is_available() else 'cpu')
             print(f"Libraries Loaded. Device: {self.device}")
+            if self.offline_mode:
+                print("Offline mode is enabled. Model weights will not be downloaded.")
             
         except ImportError as e:
             print(f"WARNING: Libraries missing ({e}). Using Mock Mode.")
@@ -129,14 +134,15 @@ class QuantumNeuralKernel:
         
         if lazy.torch:
             print("Loading ResNet18...")
-            self.feature_extractor = lazy.models.resnet18(pretrained=True)
+            weights = None if lazy.offline_mode else lazy.models.ResNet18_Weights.DEFAULT
+            self.feature_extractor = lazy.models.resnet18(weights=weights)
             for param in self.feature_extractor.parameters():
                 param.requires_grad = False
             self.feature_extractor.fc = lazy.torch.nn.Identity()
             self.feature_extractor.to(self.device)
             self.feature_extractor.eval()
             
-            self.classifier = lazy.models.resnet18(pretrained=True)
+            self.classifier = lazy.models.resnet18(weights=weights)
             self.classifier.eval()
             self.classifier.to(self.device)
         else:
@@ -146,8 +152,9 @@ class QuantumNeuralKernel:
         # Load ImageNet classes
         self.categories = []
         try:
-            if os.path.exists("imagenet_classes.txt"):
-                with open("imagenet_classes.txt", "r", encoding="utf-8") as f:
+            classes_path = os.path.join(BASE_DIR, "imagenet_classes.txt")
+            if os.path.exists(classes_path):
+                with open(classes_path, "r", encoding="utf-8") as f:
                     self.categories = [s.strip() for s in f.readlines()]
             else:
                  self.categories = [f"Class {i}" for i in range(1000)]
