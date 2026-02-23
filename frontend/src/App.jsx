@@ -15,6 +15,11 @@ function App() {
 
     console.log("Using Backend API URL:", API_URL);
 
+    const apiClient = axios.create({
+        baseURL: API_URL,
+        timeout: 15000
+    });
+
     useEffect(() => {
         fetchMetrics();
         const interval = setInterval(fetchMetrics, 5000);
@@ -24,7 +29,7 @@ function App() {
 
     const fetchMetrics = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/metrics`);
+            const response = await apiClient.get('/api/metrics');
             setMetrics(response.data);
         } catch (err) {
             console.error('Metrics fetch error:', err);
@@ -49,8 +54,8 @@ function App() {
             const formData = new FormData();
             formData.append('file', selectedFile);
 
-            const response = await axios.post(
-                `${API_URL}/api/analyze`,
+            const response = await apiClient.post(
+                '/api/analyze',
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
@@ -67,13 +72,14 @@ function App() {
 
     const handleStreaming = async (action) => {
         try {
-            await axios.post(
-                `${API_URL}/api/stream/control`,
+            await apiClient.post(
+                '/api/stream/control',
                 { action }
             );
             setIsStreaming(action === 'start');
         } catch (err) {
-            setError(err.message);
+            const backendError = err?.response?.data?.error;
+            setError(backendError || err.message || 'Streaming action failed');
         }
     };
 

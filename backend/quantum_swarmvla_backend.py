@@ -136,16 +136,23 @@ class QuantumNeuralKernel:
         
         if lazy.torch:
             print("Loading ResNet18...")
-            self.feature_extractor = lazy.models.resnet18(pretrained=True)
-            for param in self.feature_extractor.parameters():
-                param.requires_grad = False
-            self.feature_extractor.fc = lazy.torch.nn.Identity()
-            self.feature_extractor.to(self.device)
-            self.feature_extractor.eval()
-            
-            self.classifier = lazy.models.resnet18(pretrained=True)
-            self.classifier.eval()
-            self.classifier.to(self.device)
+            try:
+                weights = None if lazy.offline_mode else lazy.models.ResNet18_Weights.DEFAULT
+                self.feature_extractor = lazy.models.resnet18(weights=weights)
+                for param in self.feature_extractor.parameters():
+                    param.requires_grad = False
+                self.feature_extractor.fc = lazy.torch.nn.Identity()
+                self.feature_extractor.to(self.device)
+                self.feature_extractor.eval()
+
+                self.classifier = lazy.models.resnet18(weights=weights)
+                self.classifier.eval()
+                self.classifier.to(self.device)
+            except Exception as e:
+                print(f"WARNING: ResNet initialization failed ({e}). Switching to deterministic mock mode.")
+                lazy.offline_mode = True
+                self.feature_extractor = None
+                self.classifier = None
         else:
             self.feature_extractor = None
             self.classifier = None
@@ -235,20 +242,11 @@ class QAOARouter:
 class AlertSystem:
     def __init__(self, config):
         self.config = config
-        self.client = None
-        self.enabled = all([
-            config.TWILIO_ACCOUNT_SID and not config.TWILIO_ACCOUNT_SID.startswith('YOUR_'),
-            config.TWILIO_AUTH_TOKEN and not config.TWILIO_AUTH_TOKEN.startswith('YOUR_'),
-            config.TWILIO_PHONE and config.TWILIO_PHONE.startswith('+')
-        ])
-
-        if self.enabled:
-            try:
-                from twilio.rest import Client
-                self.client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
-            except Exception as e:
-                print(f"Twilio init failed: {e}")
-                self.client = None
+        from twilio.rest import Client
+        try:
+            self.client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
+        except:
+            self.client = None
 
     def send_alert(self, info):
         if not self.client:
@@ -339,9 +337,13 @@ def analyze_image():
 
         signal_key = hashlib.sha256(file_bytes).hexdigest()
         lazy.load_libraries() # Ensure libs are loaded
-        
-        if lazy.torch:
-            image = lazy.Image.open(file).convert('RGB')
+
+        if lazy.torch and lazy.Image:
+            try:
+                image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
+            except Exception:
+                return jsonify({'error': 'Invalid or unsupported image format'}), 400
+
             transform = lazy.transforms.Compose([
                 lazy.transforms.Resize((224, 224)),
                 lazy.transforms.ToTensor(),
@@ -392,7 +394,7 @@ def get_metrics():
 
 @app.route('/api/stream/control', methods=['POST'])
 def stream_control():
-    data = request.json
+    data = request.get_json(silent=True) or {}
     action = data.get('action')
     
     if action == 'start':
