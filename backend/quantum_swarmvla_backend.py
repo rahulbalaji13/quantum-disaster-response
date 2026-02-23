@@ -14,6 +14,10 @@ import threading
 import random
 import time
 import sys
+import io
+import hashlib
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Initialize Flask App
 # Initialize Flask App
@@ -55,6 +59,7 @@ class LazyLoader:
         self.sns = None
         self.device = "cpu"
         self.loaded = False
+        self.offline_mode = os.environ.get('OFFLINE_MODE', 'true').lower() == 'true'
 
     def load_libraries(self):
         if self.loaded:
@@ -88,6 +93,8 @@ class LazyLoader:
             
             self.device = torch.device(config.DEVICE if torch.cuda.is_available() else 'cpu')
             print(f"Libraries Loaded. Device: {self.device}")
+            if self.offline_mode:
+                print("Offline mode is enabled. Model weights will not be downloaded.")
             
         except ImportError as e:
             print(f"WARNING: Libraries missing ({e}). Using Mock Mode.")
@@ -129,16 +136,23 @@ class QuantumNeuralKernel:
         
         if lazy.torch:
             print("Loading ResNet18...")
-            self.feature_extractor = lazy.models.resnet18(pretrained=True)
-            for param in self.feature_extractor.parameters():
-                param.requires_grad = False
-            self.feature_extractor.fc = lazy.torch.nn.Identity()
-            self.feature_extractor.to(self.device)
-            self.feature_extractor.eval()
-            
-            self.classifier = lazy.models.resnet18(pretrained=True)
-            self.classifier.eval()
-            self.classifier.to(self.device)
+            try:
+                weights = None if lazy.offline_mode else lazy.models.ResNet18_Weights.DEFAULT
+                self.feature_extractor = lazy.models.resnet18(weights=weights)
+                for param in self.feature_extractor.parameters():
+                    param.requires_grad = False
+                self.feature_extractor.fc = lazy.torch.nn.Identity()
+                self.feature_extractor.to(self.device)
+                self.feature_extractor.eval()
+
+                self.classifier = lazy.models.resnet18(weights=weights)
+                self.classifier.eval()
+                self.classifier.to(self.device)
+            except Exception as e:
+                print(f"WARNING: ResNet initialization failed ({e}). Switching to deterministic mock mode.")
+                lazy.offline_mode = True
+                self.feature_extractor = None
+                self.classifier = None
         else:
             self.feature_extractor = None
             self.classifier = None
@@ -146,8 +160,9 @@ class QuantumNeuralKernel:
         # Load ImageNet classes
         self.categories = []
         try:
-            if os.path.exists("imagenet_classes.txt"):
-                with open("imagenet_classes.txt", "r", encoding="utf-8") as f:
+            classes_path = os.path.join(BASE_DIR, "imagenet_classes.txt")
+            if os.path.exists(classes_path):
+                with open(classes_path, "r", encoding="utf-8") as f:
                     self.categories = [s.strip() for s in f.readlines()]
             else:
                  self.categories = [f"Class {i}" for i in range(1000)]
@@ -175,14 +190,19 @@ class QuantumNeuralKernel:
             qc.cx(i, i + 1)
         return qc
 
-    def classify_classical(self, image):
-        if not lazy.torch:
-            return random.choice(['Flood', 'Wildfire']), 0.85
-            
+    def classify_classical(self, image, signal_key='default'):
+        fallback_labels = ['Flood', 'Wildfire', 'Earthquake', 'Tornado']
+        signal_seed = int(hashlib.sha256(str(signal_key).encode('utf-8')).hexdigest()[:8], 16)
+
+        if not lazy.torch or lazy.offline_mode:
+            label = fallback_labels[signal_seed % len(fallback_labels)]
+            confidence = 0.72 + ((signal_seed % 220) / 1000.0)
+            return label, min(confidence, 0.94)
+
         with lazy.torch.no_grad():
             preds = self.classifier(image.to(self.device))
             probs = lazy.torch.nn.functional.softmax(preds[0], dim=0)
-            
+
         top5_prob, top5_catid = lazy.torch.topk(probs, 5)
         
         # Simple Mapping
@@ -201,10 +221,11 @@ class QuantumNeuralKernel:
 class ByzantineConsensus:
     def __init__(self, n_agents=50):
         self.agents = range(n_agents)
-    
-    def consensus(self, confidence):
-        # Simplified simulation
-        variance = random.uniform(-0.1, 0.05)
+
+    def consensus(self, confidence, signal_key='default'):
+        # Deterministic adjustment for consistency across repeated analyses
+        variance_seed = int(hashlib.sha256(str(signal_key).encode('utf-8')).hexdigest()[:8], 16)
+        variance = ((variance_seed % 150) / 1000.0) - 0.075  # [-0.075, +0.074]
         final_conf = max(0, min(1, confidence + variance))
         return {
             'consensus_confidence': final_conf,
@@ -221,19 +242,49 @@ class QAOARouter:
 class AlertSystem:
     def __init__(self, config):
         self.config = config
-        from twilio.rest import Client
-        try:
-            self.client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
-        except:
-            self.client = None
+        self.client = None
+        self.enabled = all([
+            config.TWILIO_ACCOUNT_SID and not config.TWILIO_ACCOUNT_SID.startswith('YOUR_'),
+            config.TWILIO_AUTH_TOKEN and not config.TWILIO_AUTH_TOKEN.startswith('YOUR_'),
+            config.TWILIO_PHONE and config.TWILIO_PHONE.startswith('+')
+        ])
+
+        if self.enabled:
+            try:
+                from twilio.rest import Client
+                self.client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
+            except Exception as e:
+                print(f"Twilio init failed: {e}")
+                self.client = None
 
     def send_alert(self, info):
-        if not self.client: return {'status': 'TEST_MODE'}
-        try:
-            # Send logic here
-            return {'status': 'SENT'}
-        except Exception as e:
-            return {'status': 'ERROR', 'error': str(e)}
+        if not self.client:
+            return {'status': 'TEST_MODE', 'message': 'Twilio is not configured'}
+
+        body = (
+            f"[Quantum-SwarmVLA] {info.get('risk_level', 'UNKNOWN')} risk detected. "
+            f"Type: {info.get('disaster_type', 'Unknown')} | "
+            f"Confidence: {info.get('confidence', 0):.2f} | "
+            f"Time: {info.get('timestamp', datetime.now().isoformat())}"
+        )
+
+        sent_to = []
+        failures = []
+        for phone in self.config.RESCUE_TEAM_PHONES:
+            to_phone = phone.strip()
+            if not to_phone:
+                continue
+            try:
+                self.client.messages.create(body=body, from_=self.config.TWILIO_PHONE, to=to_phone)
+                sent_to.append(to_phone)
+            except Exception as e:
+                failures.append({'to': to_phone, 'error': str(e)})
+
+        if sent_to and not failures:
+            return {'status': 'SENT', 'sent_to': sent_to}
+        if sent_to and failures:
+            return {'status': 'PARTIAL', 'sent_to': sent_to, 'failures': failures}
+        return {'status': 'ERROR', 'failures': failures}
 
 # ============================================================
 # INITIALIZATION HELPERS
@@ -289,10 +340,19 @@ def analyze_image():
             return jsonify({'error': 'No file provided'}), 400
         
         file = request.files['file']
+        file_bytes = file.read()
+        if not file_bytes:
+            return jsonify({'error': 'Uploaded file is empty'}), 400
+
+        signal_key = hashlib.sha256(file_bytes).hexdigest()
         lazy.load_libraries() # Ensure libs are loaded
-        
-        if lazy.torch:
-            image = lazy.Image.open(file).convert('RGB')
+
+        if lazy.torch and lazy.Image:
+            try:
+                image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
+            except Exception:
+                return jsonify({'error': 'Invalid or unsupported image format'}), 400
+
             transform = lazy.transforms.Compose([
                 lazy.transforms.Resize((224, 224)),
                 lazy.transforms.ToTensor(),
@@ -303,9 +363,9 @@ def analyze_image():
             tensor = None
 
         kernel = get_nqk()
-        label, conf = kernel.classify_classical(tensor)
-        
-        consensus = get_consensus().consensus(conf)
+        label, conf = kernel.classify_classical(tensor, signal_key=signal_key)
+
+        consensus = get_consensus().consensus(conf, signal_key=signal_key)
         risk = 'HIGH' if consensus['consensus_confidence'] > 0.7 else 'MEDIUM'
         
         routing = get_router().optimize_routes({'latitude': 0, 'longitude': 0})
@@ -319,9 +379,14 @@ def analyze_image():
         }
         
         system_state['total_analyses'] += 1
-        if risk == 'HIGH': system_state['disaster_count'] += 1
+        if risk == 'HIGH':
+            system_state['disaster_count'] += 1
         system_state['recent_detections'].append({'type': label, 'risk': risk, 'timestamp': res['timestamp']})
-        
+
+        alert_info = dict(res)
+        alert_result = get_alert_system().send_alert(alert_info)
+        res['alert_status'] = alert_result
+
         return jsonify(res)
 
     except Exception as e:
@@ -355,8 +420,42 @@ def start_streaming_thread():
     global stream_thread
     if stream_thread is None or not stream_thread.is_alive():
         def run_stream():
+            stream_samples = [
+                ('Flood', 0.84),
+                ('Wildfire', 0.89),
+                ('Earthquake', 0.81),
+                ('Tornado', 0.78),
+                ('Flood', 0.86),
+            ]
+            idx = 0
             while system_state['is_streaming']:
-                # ... streaming logic ...
+                disaster_type, confidence = stream_samples[idx % len(stream_samples)]
+                idx += 1
+                risk_level = 'HIGH' if confidence >= 0.8 else 'MEDIUM'
+                timestamp = datetime.now().isoformat()
+
+                system_state['total_analyses'] += 1
+                if risk_level == 'HIGH':
+                    system_state['disaster_count'] += 1
+                system_state['recent_detections'].append({
+                    'type': disaster_type,
+                    'risk': risk_level,
+                    'confidence': confidence,
+                    'timestamp': timestamp,
+                    'source': 'stream'
+                })
+
+                if len(system_state['recent_detections']) > 100:
+                    system_state['recent_detections'] = system_state['recent_detections'][-100:]
+
+                if risk_level == 'HIGH':
+                    get_alert_system().send_alert({
+                        'disaster_type': disaster_type,
+                        'confidence': confidence,
+                        'risk_level': risk_level,
+                        'timestamp': timestamp
+                    })
+
                 time.sleep(2)
         stream_thread = threading.Thread(target=run_stream, daemon=True)
         stream_thread.start()

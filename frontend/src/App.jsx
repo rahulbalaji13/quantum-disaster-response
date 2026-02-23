@@ -10,7 +10,7 @@ function App() {
     const [error, setError] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
 
-    const BASE_URL = process.env.REACT_APP_API_URL || 'https://quantum-disaster-response.onrender.com';
+    const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const API_URL = BASE_URL.replace(/\/$/, ''); // Remove trailing slash if present
 
     console.log("Using Backend API URL:", API_URL);
@@ -58,7 +58,8 @@ function App() {
             setAnalysis(response.data);
             fetchMetrics();
         } catch (err) {
-            setError(err.message || 'Analysis failed');
+            const backendError = err?.response?.data?.error;
+            setError(backendError || err.message || 'Analysis failed');
         } finally {
             setLoading(false);
         }
@@ -157,7 +158,7 @@ function App() {
                                 </div>
                                 <div className="metric-card">
                                     <p className="metric-label">Detection Rate</p>
-                                    <p className="metric-value">{(metrics.detection_rate * 100).toFixed(1)}%</p>
+                                    <p className="metric-value">{(((metrics.disaster_count || 0) / Math.max(metrics.total_analyses || 1, 1)) * 100).toFixed(1)}%</p>
                                 </div>
                             </div>
                         )}
