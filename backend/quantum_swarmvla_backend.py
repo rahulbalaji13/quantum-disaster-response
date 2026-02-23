@@ -14,10 +14,6 @@ import threading
 import random
 import time
 import sys
-import io
-import hashlib
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Initialize Flask App
 # Initialize Flask App
