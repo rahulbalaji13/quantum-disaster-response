@@ -10,10 +10,15 @@ function App() {
     const [error, setError] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
 
-    const BASE_URL = process.env.REACT_APP_API_URL || 'https://quantum-disaster-response.onrender.com';
+    const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const API_URL = BASE_URL.replace(/\/$/, ''); // Remove trailing slash if present
 
     console.log("Using Backend API URL:", API_URL);
+
+    const apiClient = axios.create({
+        baseURL: API_URL,
+        timeout: 15000
+    });
 
     useEffect(() => {
         fetchMetrics();
@@ -24,7 +29,7 @@ function App() {
 
     const fetchMetrics = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/metrics`);
+            const response = await apiClient.get('/api/metrics');
             setMetrics(response.data);
         } catch (err) {
             console.error('Metrics fetch error:', err);
@@ -49,8 +54,8 @@ function App() {
             const formData = new FormData();
             formData.append('file', selectedFile);
 
-            const response = await axios.post(
-                `${API_URL}/api/analyze`,
+            const response = await apiClient.post(
+                '/api/analyze',
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
@@ -58,7 +63,8 @@ function App() {
             setAnalysis(response.data);
             fetchMetrics();
         } catch (err) {
-            setError(err.message || 'Analysis failed');
+            const backendError = err?.response?.data?.error;
+            setError(backendError || err.message || 'Analysis failed');
         } finally {
             setLoading(false);
         }
@@ -66,13 +72,14 @@ function App() {
 
     const handleStreaming = async (action) => {
         try {
-            await axios.post(
-                `${API_URL}/api/stream/control`,
+            await apiClient.post(
+                '/api/stream/control',
                 { action }
             );
             setIsStreaming(action === 'start');
         } catch (err) {
-            setError(err.message);
+            const backendError = err?.response?.data?.error;
+            setError(backendError || err.message || 'Streaming action failed');
         }
     };
 
@@ -157,7 +164,7 @@ function App() {
                                 </div>
                                 <div className="metric-card">
                                     <p className="metric-label">Detection Rate</p>
-                                    <p className="metric-value">{(metrics.detection_rate * 100).toFixed(1)}%</p>
+                                    <p className="metric-value">{(((metrics.disaster_count || 0) / Math.max(metrics.total_analyses || 1, 1)) * 100).toFixed(1)}%</p>
                                 </div>
                             </div>
                         )}
