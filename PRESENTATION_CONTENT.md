@@ -23,7 +23,6 @@
 -   **Previous Approach**: Utilized **Florence-2** (Vision) and **VL-Mamba** (Multimodal) for classification. Achieved ~90-92% accuracy.
 -   **The Quantum Leap**: Why change?
     -   **High Dimensionality**: Disasters are complex. Quantum kernels map data to infinite-dimensional Hilbert spaces for better separation of classes (e.g., distinguishing "muddy water" from "flood disaster").
-    -   **Combinatorial Complexity**: Routing 50+ drones is an NP-hard problem. Classical algorithms struggle; Quantum algorithms (QAOA) offer quadratic speedups.
 
 **Speaker Notes**:
 -   "In my previous research, I successfully implemented state-of-the-art classical models like Florence-2. They were accurate but computationally linear."
@@ -52,11 +51,10 @@
 **Goal**: Develop a robust, quantum-hybrid ecosystem for automated disaster response.
 1.  **Implement NQK (Neural Quantum Kernel)**: To classify disaster scenes with higher confidence using quantum feature maps.
 2.  **Develop Quantum Consensus**: To achieve fault-tolerant decision-making among simulated drone agents (Byzantine Agreement).
-3.  **Optimize Routing with QAOA**: To simulate quantum optimization for faster rescue path planning.
-4.  **Real-Time Action**: To bridge the gap between simulation and real-world alerts (SMS/Dashboard).
+3.  **Real-Time Action**: To bridge the gap between simulation and real-world alerts (SMS/Dashboard).
 
 **Speaker Notes**:
--   "Our objective is creating a full pipeline: From the quantum 'brain' classifying the image, to the 'swarm' agreeing on the threat, to the 'optimization' of the rescue path."
+-   "Our objective is creating a full pipeline: From the quantum 'brain' classifying the image, to the 'swarm' agreeing on the threat."
 
 ---
 
@@ -69,7 +67,7 @@
     -   **Classical**: ResNet18 extracts visual features (Edges, textures).
     -   **Quantum**: Features are encoded into Qubits; Entanglement captures complex correlations.
 3.  **Swarm Intelligence**: Agents vote on the outcome using Quantum Consensus.
-4.  **Output**: Verified Alert -> SMS Dispatch -> QAOA Route Generation.
+4.  **Output**: Verified Alert -> SMS Dispatch.
 
 **Speaker Notes**:
 -   "The system is designed as a **Hybrid Edge Architecture**. We don't replace classical computers; we augment them."
@@ -112,11 +110,8 @@
     -   Uses a consensus mechanism to filter out outliers and find the "True" threat level.
 -   **Result**: Prevents false alarms from triggering rescue teams.
 
-### Slide 9: Module 3 - QAOA Routing & Alert System
--   **Module 3: QAOA (Quantum Approximate Optimization Algorithm)**:
-    -   Simulates finding the shortest path for rescue drones to the validated target.
-    -   Benchmarks show potential for **Quadratic Speedup**.
--   **Module 4: Alert System**:
+### Slide 9: Module 3 - Alert System
+-   **Alert System**:
     -   Integration with **Twilio API**.
     -   Sends "Actionable" SMS (Risk Level, Disaster Type, Required Team Size).
 
