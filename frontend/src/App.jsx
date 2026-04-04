@@ -17,7 +17,7 @@ function App() {
 
     const apiClient = axios.create({
         baseURL: API_URL,
-        timeout: 15000
+        timeout: 60000
     });
 
     useEffect(() => {
