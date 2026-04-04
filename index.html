@@ -241,7 +241,7 @@
                 </div>
                 <div class="file-content">
                     <pre><code><span class="comment"># Quantum-SwarmVLA-Edge Backend
-# Main application with NQK, Byzantine Consensus, QAOA Routing, and SMS Alerts</span>
+# Main application with NQK, Byzantine Consensus, and SMS Alerts</span>
 
 <span class="keyword">from</span> flask <span class="keyword">import</span> Flask, request, jsonify
 <span class="keyword">from</span> flask_cors <span class="keyword">import</span> CORS
@@ -376,40 +376,7 @@ byzantine_consensus = ByzantineConsensus(
     byzantine_fraction=0.32
 )
 
-<span class="comment"># ============================================================
-# QAOA ROUTING - Drone Path Optimization
-# ============================================================</span>
 
-<span class="class-name">class</span> QAOARouter:
-    <span class="string">"""QAOA-based drone routing optimization"""</span>
-    
-    <span class="keyword">def</span> __init__(self, n_drones=3):
-        self.n_drones = n_drones
-    
-    <span class="keyword">def</span> optimize_routes(self, disaster_location):
-        <span class="string">"""Simulate QAOA route optimization"""</span>
-        lat, lon = disaster_location[<span class="string">'latitude'</span>], disaster_location[<span class="string">'longitude'</span>]
-        
-        routes = []
-        <span class="keyword">for</span> i <span class="keyword">in</span> range(self.n_drones):
-            route = {
-                <span class="string">'drone_id'</span>: i + 1,
-                <span class="string">'base_lat'</span>: lat + random.uniform(-0.01, 0.01),
-                <span class="string">'base_lon'</span>: lon + random.uniform(-0.01, 0.01),
-                <span class="string">'disaster_lat'</span>: lat,
-                <span class="string">'disaster_lon'</span>: lon,
-                <span class="string">'estimated_time'</span>: random.uniform(5, 15)  <span class="comment"># minutes</span>
-            }
-            routes.append(route)
-        
-        <span class="keyword">return</span> {
-            <span class="string">'routes'</span>: routes,
-            <span class="string">'optimization_time'</span>: 0.32,  <span class="comment"># seconds</span>
-            <span class="string">'classical_time'</span>: 1.6,  <span class="comment"># 5x speedup</span>
-            <span class="string">'speedup_factor'</span>: 5.0
-        }
-
-qaoa_router = QAOARouter(n_drones=3)
 
 <span class="comment"># ============================================================
 # SMS ALERT SYSTEM - Twilio Integration
@@ -519,16 +486,13 @@ system_state = {
         <span class="keyword">else</span>:
             risk_level = <span class="string">'MEDIUM'</span>
         
-        <span class="comment"># QAOA routing</span>
-        disaster_location = {<span class="string">'latitude'</span>: 12.9716, <span class="string">'longitude'</span>: 77.5946}
-        routing = qaoa_router.optimize_routes(disaster_location)
+
         
         analysis_result = {
             <span class="string">'disaster_type'</span>: disaster_type,
             <span class="string">'confidence'</span>: float(consensus_result[<span class="string">'consensus_confidence'</span>]),
             <span class="string">'risk_level'</span>: risk_level,
             <span class="string">'consensus_result'</span>: consensus_result,
-            <span class="string">'routing_optimization'</span>: routing,
             <span class="string">'alert_triggered'</span>: risk_level <span class="keyword">in</span> [<span class="string">'CRITICAL'</span>, <span class="string">'HIGH'</span>],
             <span class="string">'timestamp'</span>: datetime.now().isoformat()
         }
