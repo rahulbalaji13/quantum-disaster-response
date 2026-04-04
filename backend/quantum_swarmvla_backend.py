@@ -1,5 +1,5 @@
 # Quantum-SwarmVLA-Edge Backend
-# Main application with NQK, Byzantine Consensus, QAOA Routing, and SMS Alerts
+# Main application with NQK, Byzantine Consensus, and SMS Alerts
 # Optimized for Fast Startup (Lazy Loading)
 
 from flask import Flask, request, jsonify
@@ -39,7 +39,6 @@ system_state = {
 # Global Lazy Objects
 nqk = None
 byzantine_consensus = None
-qaoa_router = None
 alert_system = None
 stream_thread = None
 
@@ -232,13 +231,6 @@ class ByzantineConsensus:
             'fault_tolerance': "32.0%"
         }
 
-class QAOARouter:
-    def optimize_routes(self, loc):
-        return {
-            'routes': [{'drone_id': 1, 'estimated_time': 10}],
-            'speedup_factor': 5.0
-        }
-
 class AlertSystem:
     def __init__(self, config):
         self.config = config
@@ -292,12 +284,6 @@ def get_consensus():
     if byzantine_consensus is None:
         byzantine_consensus = ByzantineConsensus(config.N_AGENTS)
     return byzantine_consensus
-
-def get_router():
-    global qaoa_router
-    if qaoa_router is None:
-        qaoa_router = QAOARouter()
-    return qaoa_router
 
 def get_alert_system():
     global alert_system
@@ -359,13 +345,10 @@ def analyze_image():
         consensus = get_consensus().consensus(conf, signal_key=signal_key)
         risk = 'HIGH' if consensus['consensus_confidence'] > 0.7 else 'MEDIUM'
         
-        routing = get_router().optimize_routes({'latitude': 0, 'longitude': 0})
-        
         res = {
             'disaster_type': label,
             'confidence': consensus['consensus_confidence'],
             'risk_level': risk,
-            'routing_optimization': routing,
             'timestamp': datetime.now().isoformat()
         }
         
