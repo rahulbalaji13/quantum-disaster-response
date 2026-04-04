@@ -321,6 +321,15 @@ def analyze_image():
         if not file_bytes:
             return jsonify({'error': 'Uploaded file is empty'}), 400
 
+        try:
+            from PIL import Image
+            test_image = Image.open(io.BytesIO(file_bytes)).convert('RGB')
+            small_img = np.array(test_image.resize((64, 64)))
+            if np.std(small_img) < 15.0 or len(np.unique(small_img.reshape(-1, 3), axis=0)) < 150:
+                return jsonify({'error': 'Irrelevant image detected. Provide a real-world disaster photo.'}), 400
+        except Exception:
+            return jsonify({'error': 'Invalid or unsupported image format'}), 400
+
         signal_key = hashlib.sha256(file_bytes).hexdigest()
         lazy.load_libraries() # Ensure libs are loaded
 
