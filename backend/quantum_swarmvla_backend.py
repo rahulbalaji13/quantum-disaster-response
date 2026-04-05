@@ -291,6 +291,35 @@ def get_alert_system():
         alert_system = AlertSystem(config)
     return alert_system
 
+
+def is_likely_satellite_image(image):
+    """
+    Heuristic validation to avoid returning arbitrary disaster predictions for
+    blank pages, plain documents, or low-information inputs.
+    """
+    arr = np.array(image)
+    if arr.size == 0:
+        return False
+
+    height, width = arr.shape[:2]
+    if height < 128 or width < 128:
+        return False
+
+    grayscale = arr.mean(axis=2)
+    brightness_std = float(np.std(grayscale))
+    edge_energy = float(np.abs(np.diff(grayscale, axis=0)).mean() + np.abs(np.diff(grayscale, axis=1)).mean())
+    white_ratio = float(np.mean(grayscale > 242))
+    black_ratio = float(np.mean(grayscale < 12))
+
+    if brightness_std < 14:
+        return False
+    if edge_energy < 14:
+        return False
+    if white_ratio > 0.72 or black_ratio > 0.72:
+        return False
+
+    return True
+
 # ============================================================
 # ROUTES
 # ============================================================
@@ -330,6 +359,9 @@ def analyze_image():
             except Exception:
                 return jsonify({'error': 'Invalid or unsupported image format'}), 400
 
+            if not is_likely_satellite_image(image):
+                return jsonify({'error': 'upload correct image'}), 400
+
             transform = lazy.transforms.Compose([
                 lazy.transforms.Resize((224, 224)),
                 lazy.transforms.ToTensor(),
@@ -337,7 +369,7 @@ def analyze_image():
             ])
             tensor = transform(image).unsqueeze(0)
         else:
-            tensor = None
+            return jsonify({'error': 'Image validation dependency unavailable. Please upload correct image.'}), 503
 
         kernel = get_nqk()
         label, conf = kernel.classify_classical(tensor, signal_key=signal_key)

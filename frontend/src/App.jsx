@@ -9,6 +9,8 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
+    const [selectedRating, setSelectedRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
 
     const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const API_URL = BASE_URL.replace(/\/$/, ''); // Remove trailing slash if present
@@ -39,6 +41,7 @@ function App() {
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
         setError(null);
+        setAnalysis(null);
     };
 
     const handleAnalyze = async () => {
@@ -103,6 +106,10 @@ function App() {
                 <div className="main-content">
                     <section className="upload-section">
                         <h2>📸 Analyze Disaster Image</h2>
+                        <p className="upload-helper">
+                            Upload only <strong>satellite imagery</strong>. If the uploaded file is not a valid satellite image,
+                            the system will respond with <em>"upload correct image"</em>.
+                        </p>
                         <div className="upload-area">
                             <input
                                 type="file"
@@ -118,6 +125,9 @@ function App() {
                                 {loading ? 'Analyzing...' : 'Analyze Image'}
                             </button>
                         </div>
+                        {selectedFile && (
+                            <p className="file-chip">Selected: {selectedFile.name}</p>
+                        )}
                         {error && <div className="error-message">{error}</div>}
                     </section>
 
@@ -197,6 +207,29 @@ function App() {
                     </section>
                 </div>
             </div>
+
+            <footer className="feedback-footer">
+                <h3>⭐ Rate your dashboard experience</h3>
+                <p>Your feedback helps us improve response quality and usability.</p>
+                <div className="star-rating" aria-label="Star rating feedback">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                            key={star}
+                            type="button"
+                            className={`star-btn ${(hoverRating || selectedRating) >= star ? 'filled' : ''}`}
+                            onClick={() => setSelectedRating(star)}
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        >
+                            ★
+                        </button>
+                    ))}
+                </div>
+                <p className="rating-caption">
+                    {selectedRating ? `Thanks for rating us ${selectedRating}/5!` : 'Tap a star to submit quick feedback.'}
+                </p>
+            </footer>
         </div>
     );
 }
