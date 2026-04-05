@@ -96,12 +96,10 @@ function App() {
         }
     };
 
-    const presentationEmbedUrl = useMemo(() => {
-        const pptxPath = 'https://docs.google.com/presentation/d/1-bQ5PusMZm4bivoeR3v9tXTLw6FchtJkdJSBMDp0AR4/edit?usp=sharing';
-        if (typeof window === 'undefined') return pptxPath;
-        const absoluteUrl = `${window.location.origin}${pptxPath}`;
-        return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`;
-    }, []);
+    const presentationEmbedUrl = useMemo(
+        () => 'https://docs.google.com/presentation/d/1-bQ5PusMZm4bivoeR3v9tXTLw6FchtJkdJSBMDp0AR4/embed?start=false&loop=false&delayms=3000',
+        []
+    );
 
     const openPresentationFullscreen = () => {
         const element = presentationRef.current;
@@ -152,15 +150,21 @@ function App() {
                             <div className="sample-card">
                                 <h3>Sample Trained Image</h3>
                                 <img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/ISS-38_Italy_view.jpg/640px-ISS-38_Italy_view.jpg"
+                                    src="/satellite_image.jpeg"
                                     alt="Satellite-captured view of land and water"
+                                    onError={(e) => {
+                                        e.currentTarget.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/ISS-38_Italy_view.jpg/640px-ISS-38_Italy_view.jpg';
+                                    }}
                                 />
                             </div>
                             <div className="sample-card">
                                 <h3>Sample Tested Image</h3>
                                 <img
-                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Katrina_2005-08-28.jpg/640px-Katrina_2005-08-28.jpg"
+                                    src="/satellite_test_image.jpg"
                                     alt="Satellite-captured cyclone scene"
+                                    onError={(e) => {
+                                        e.currentTarget.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Katrina_2005-08-28.jpg/640px-Katrina_2005-08-28.jpg';
+                                    }}
                                 />
                             </div>
                         </div>
@@ -177,21 +181,30 @@ function App() {
                             <span>→</span>
                             <div>Metrics + Alerts + Routing</div>
                         </div>
+                        <div className="architecture-image-box">
+                            <img
+                                src="/architecture_image.png"
+                                alt="Project architecture diagram"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                }}
+                            />
+                        </div>
                     </section>
 
                     <section className="presentation-section">
                         <h2>📑 Project Presentation Preview</h2>
                         <p>
-                            Presentation file: <strong>24MCS0071_RahulB_Project-review-II.pptx</strong>
+                            Google Slides presentation preview
                         </p>
                         <div className="presentation-controls">
                             <a
                                 className="btn-primary presentation-btn"
-                                href="/24MCS0071_RahulB_Project-review-II.pptx"
+                                href="https://docs.google.com/presentation/d/1-bQ5PusMZm4bivoeR3v9tXTLw6FchtJkdJSBMDp0AR4/edit?usp=sharing"
                                 target="_blank"
                                 rel="noreferrer"
                             >
-                                Open PPTX File
+                                Open Presentation
                             </a>
                             <button
                                 className="btn-stream presentation-btn"
