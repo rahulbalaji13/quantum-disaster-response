@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -11,7 +11,7 @@ function App() {
     const [isStreaming, setIsStreaming] = useState(false);
     const [selectedRating, setSelectedRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
-    const [youtubeUrl, setYoutubeUrl] = useState('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    const presentationRef = useRef(null);
 
     const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const API_URL = BASE_URL.replace(/\/$/, ''); // Remove trailing slash if present
@@ -96,11 +96,17 @@ function App() {
         }
     };
 
-    const getEmbedUrl = (url) => {
-        const defaultEmbed = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
-        if (!url) return defaultEmbed;
-        const match = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-        return match ? `https://www.youtube.com/embed/${match[1]}` : defaultEmbed;
+    const presentationEmbedUrl = useMemo(() => {
+        const pptxPath = '/24MCS0071_RahulB_Project-review-II.pptx';
+        if (typeof window === 'undefined') return pptxPath;
+        const absoluteUrl = `${window.location.origin}${pptxPath}`;
+        return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`;
+    }, []);
+
+    const openPresentationFullscreen = () => {
+        const element = presentationRef.current;
+        if (!element || !element.requestFullscreen) return;
+        element.requestFullscreen().catch(() => { });
     };
 
     return (
@@ -146,15 +152,15 @@ function App() {
                             <div className="sample-card">
                                 <h3>Sample Trained Image</h3>
                                 <img
-                                    src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?auto=format&fit=crop&w=800&q=80"
-                                    alt="Sample trained satellite scene"
+                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/ISS-38_Italy_view.jpg/640px-ISS-38_Italy_view.jpg"
+                                    alt="Satellite-captured view of land and water"
                                 />
                             </div>
                             <div className="sample-card">
                                 <h3>Sample Tested Image</h3>
                                 <img
-                                    src="https://images.unsplash.com/photo-1508179522353-11ba468c4a1c?auto=format&fit=crop&w=800&q=80"
-                                    alt="Sample tested satellite disaster scene"
+                                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Katrina_2005-08-28.jpg/640px-Katrina_2005-08-28.jpg"
+                                    alt="Satellite-captured cyclone scene"
                                 />
                             </div>
                         </div>
@@ -173,21 +179,33 @@ function App() {
                         </div>
                     </section>
 
-                    <section className="video-section">
-                        <h2>🎬 Project Demo Video</h2>
-                        <p>Paste your YouTube video link below. It will preview and play inside this page.</p>
-                        <input
-                            className="video-input"
-                            type="url"
-                            value={youtubeUrl}
-                            onChange={(e) => setYoutubeUrl(e.target.value)}
-                            placeholder="https://www.youtube.com/watch?v=..."
-                        />
-                        <div className="video-wrapper">
+                    <section className="presentation-section">
+                        <h2>📑 Project Presentation Preview</h2>
+                        <p>
+                            Presentation file: <strong>24MCS0071_RahulB_Project-review-II.pptx</strong>
+                        </p>
+                        <div className="presentation-controls">
+                            <a
+                                className="btn-primary presentation-btn"
+                                href="/24MCS0071_RahulB_Project-review-II.pptx"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                Open PPTX File
+                            </a>
+                            <button
+                                className="btn-stream presentation-btn"
+                                type="button"
+                                onClick={openPresentationFullscreen}
+                            >
+                                Fullscreen Preview
+                            </button>
+                        </div>
+                        <div className="video-wrapper" ref={presentationRef}>
                             <iframe
-                                src={getEmbedUrl(youtubeUrl)}
-                                title="Project demo video"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                src={presentationEmbedUrl}
+                                title="Project presentation preview"
+                                allow="fullscreen"
                                 allowFullScreen
                             />
                         </div>
