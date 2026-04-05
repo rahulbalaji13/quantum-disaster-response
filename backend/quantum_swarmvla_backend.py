@@ -361,6 +361,14 @@ def decode_image_from_bytes(file_bytes):
             return np.array(image)
         except Exception:
             pass
+    else:
+        # If lazy loader didn't provide PIL, try direct import as a fallback.
+        try:
+            from PIL import Image as PilImage
+            image = PilImage.open(io.BytesIO(file_bytes)).convert('RGB')
+            return np.array(image)
+        except Exception:
+            pass
 
     # 2) OpenCV path
     try:
@@ -375,7 +383,7 @@ def decode_image_from_bytes(file_bytes):
     # 3) imageio path
     try:
         import imageio.v3 as iio
-        img = iio.imread(file_bytes)
+        img = iio.imread(io.BytesIO(file_bytes))
         if img is None:
             return None
         if img.ndim == 2:
