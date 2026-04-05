@@ -97,7 +97,7 @@ function App() {
     };
 
     const presentationEmbedUrl = useMemo(() => {
-        const pptxPath = 'frontend/src/24MCS0071_RahulB_Project-review-II.pptx';
+        const pptxPath = 'https://docs.google.com/presentation/d/1-bQ5PusMZm4bivoeR3v9tXTLw6FchtJkdJSBMDp0AR4/edit?usp=sharing';
         if (typeof window === 'undefined') return pptxPath;
         const absoluteUrl = `${window.location.origin}${pptxPath}`;
         return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`;
