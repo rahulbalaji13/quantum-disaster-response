@@ -76,17 +76,21 @@ class LazyLoader:
             return
 
         try:
+            from PIL import Image
+            self.Image = Image
+        except ImportError:
+            self.Image = None
+
+        try:
             import torch
             import torchvision.models as models
             from torchvision import transforms
-            from PIL import Image
             import matplotlib.pyplot as plt
             import seaborn as sns
             
             self.torch = torch
             self.models = models
             self.transforms = transforms
-            self.Image = Image
             self.plt = plt
             self.sns = sns
             
@@ -189,14 +193,30 @@ class QuantumNeuralKernel:
             qc.cx(i, i + 1)
         return qc
 
-    def classify_classical(self, image, signal_key='default'):
+    def classify_classical(self, image, signal_key='default', raw_image=None):
         fallback_labels = ['Flood', 'Wildfire', 'Earthquake', 'Tornado']
         signal_seed = int(hashlib.sha256(str(signal_key).encode('utf-8')).hexdigest()[:8], 16)
 
         if not lazy.torch or lazy.offline_mode:
+            if raw_image is not None:
+                arr = np.asarray(raw_image.convert('RGB'), dtype=np.float32)
+                red = arr[:, :, 0].mean()
+                green = arr[:, :, 1].mean()
+                blue = arr[:, :, 2].mean()
+                brightness = arr.mean(axis=2)
+                edge_strength = np.abs(np.diff(brightness, axis=0)).mean() + np.abs(np.diff(brightness, axis=1)).mean()
+
+                if blue > red + 8 and blue > green + 6:
+                    return 'Flood', 0.82
+                if red > green + 12 and red > blue + 10:
+                    return 'Wildfire', 0.80
+                if edge_strength > 40:
+                    return 'Earthquake', 0.76
+                return 'Tornado', 0.74
+
             label = fallback_labels[signal_seed % len(fallback_labels)]
-            confidence = 0.72 + ((signal_seed % 220) / 1000.0)
-            return label, min(confidence, 0.94)
+            confidence = 0.70 + ((signal_seed % 180) / 1000.0)
+            return label, min(confidence, 0.88)
 
         with lazy.torch.no_grad():
             preds = self.classifier(image.to(self.device))
@@ -291,6 +311,39 @@ def get_alert_system():
         alert_system = AlertSystem(config)
     return alert_system
 
+
+def is_likely_satellite_image(image):
+    """
+    Heuristic validation to avoid returning arbitrary disaster predictions for
+    blank pages, plain documents, or low-information inputs.
+    """
+    arr = np.array(image)
+    if arr.size == 0:
+        return False
+
+    height, width = arr.shape[:2]
+    if height < 128 or width < 128:
+        return False
+
+    grayscale = arr.mean(axis=2)
+    brightness_std = float(np.std(grayscale))
+    edge_energy = float(np.abs(np.diff(grayscale, axis=0)).mean() + np.abs(np.diff(grayscale, axis=1)).mean())
+    white_ratio = float(np.mean(grayscale > 242))
+    black_ratio = float(np.mean(grayscale < 12))
+    dynamic_range = float(np.percentile(grayscale, 95) - np.percentile(grayscale, 5))
+
+    # Keep validation permissive for real satellite scenes, but reject blank/flat uploads.
+    if brightness_std < 5:
+        return False
+    if dynamic_range < 18:
+        return False
+    if white_ratio > 0.93 or black_ratio > 0.93:
+        return False
+    if edge_energy < 1.2 and brightness_std < 12:
+        return False
+
+    return True
+
 # ============================================================
 # ROUTES
 # ============================================================
@@ -324,12 +377,17 @@ def analyze_image():
         signal_key = hashlib.sha256(file_bytes).hexdigest()
         lazy.load_libraries() # Ensure libs are loaded
 
-        if lazy.torch and lazy.Image:
-            try:
-                image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
-            except Exception:
-                return jsonify({'error': 'Invalid or unsupported image format'}), 400
+        if not lazy.Image:
+            return jsonify({'error': 'Image decoding dependency unavailable on server.'}), 503
+        try:
+            image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
+        except Exception:
+            return jsonify({'error': 'Invalid or unsupported image format'}), 400
 
+        if not is_likely_satellite_image(image):
+            return jsonify({'error': 'upload correct image'}), 400
+
+        if lazy.torch and lazy.transforms:
             transform = lazy.transforms.Compose([
                 lazy.transforms.Resize((224, 224)),
                 lazy.transforms.ToTensor(),
@@ -340,7 +398,7 @@ def analyze_image():
             tensor = None
 
         kernel = get_nqk()
-        label, conf = kernel.classify_classical(tensor, signal_key=signal_key)
+        label, conf = kernel.classify_classical(tensor, signal_key=signal_key, raw_image=image)
 
         consensus = get_consensus().consensus(conf, signal_key=signal_key)
         risk = 'HIGH' if consensus['consensus_confidence'] > 0.7 else 'MEDIUM'
