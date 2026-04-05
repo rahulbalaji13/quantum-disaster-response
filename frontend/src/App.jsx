@@ -9,6 +9,9 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isStreaming, setIsStreaming] = useState(false);
+    const [selectedRating, setSelectedRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [youtubeUrl, setYoutubeUrl] = useState('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 
     const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const API_URL = BASE_URL.replace(/\/$/, ''); // Remove trailing slash if present
@@ -39,6 +42,7 @@ function App() {
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
         setError(null);
+        setAnalysis(null);
     };
 
     const handleAnalyze = async () => {
@@ -92,6 +96,13 @@ function App() {
         }
     };
 
+    const getEmbedUrl = (url) => {
+        const defaultEmbed = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+        if (!url) return defaultEmbed;
+        const match = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+        return match ? `https://www.youtube.com/embed/${match[1]}` : defaultEmbed;
+    };
+
     return (
         <div className="app">
             <header className="header">
@@ -103,6 +114,10 @@ function App() {
                 <div className="main-content">
                     <section className="upload-section">
                         <h2>📸 Analyze Disaster Image</h2>
+                        <p className="upload-helper">
+                            Upload only <strong>satellite imagery</strong>. If the uploaded file is not a valid satellite image,
+                            the system will respond with <em>"upload correct image"</em>.
+                        </p>
                         <div className="upload-area">
                             <input
                                 type="file"
@@ -118,7 +133,64 @@ function App() {
                                 {loading ? 'Analyzing...' : 'Analyze Image'}
                             </button>
                         </div>
+                        {selectedFile && (
+                            <p className="file-chip">Selected: {selectedFile.name}</p>
+                        )}
                         {error && <div className="error-message">{error}</div>}
+                    </section>
+
+                    <section className="dataset-section">
+                        <h2>🛰️ Sample Dataset Preview</h2>
+                        <p>Reference examples similar to your training/testing flow for disaster satellite imagery.</p>
+                        <div className="sample-grid">
+                            <div className="sample-card">
+                                <h3>Sample Trained Image</h3>
+                                <img
+                                    src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?auto=format&fit=crop&w=800&q=80"
+                                    alt="Sample trained satellite scene"
+                                />
+                            </div>
+                            <div className="sample-card">
+                                <h3>Sample Tested Image</h3>
+                                <img
+                                    src="https://images.unsplash.com/photo-1508179522353-11ba468c4a1c?auto=format&fit=crop&w=800&q=80"
+                                    alt="Sample tested satellite disaster scene"
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="architecture-section">
+                        <h2>🏗️ Project Architecture</h2>
+                        <div className="architecture-flow">
+                            <div>Frontend (React Dashboard)</div>
+                            <span>→</span>
+                            <div>Backend API (Flask)</div>
+                            <span>→</span>
+                            <div>Validation + Disaster Inference</div>
+                            <span>→</span>
+                            <div>Metrics + Alerts + Routing</div>
+                        </div>
+                    </section>
+
+                    <section className="video-section">
+                        <h2>🎬 Project Demo Video</h2>
+                        <p>Paste your YouTube video link below. It will preview and play inside this page.</p>
+                        <input
+                            className="video-input"
+                            type="url"
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                        <div className="video-wrapper">
+                            <iframe
+                                src={getEmbedUrl(youtubeUrl)}
+                                title="Project demo video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        </div>
                     </section>
 
                     {analysis && (
@@ -197,6 +269,29 @@ function App() {
                     </section>
                 </div>
             </div>
+
+            <footer className="feedback-footer">
+                <h3>⭐ Rate your dashboard experience</h3>
+                <p>Your feedback helps us improve response quality and usability.</p>
+                <div className="star-rating" aria-label="Star rating feedback">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                            key={star}
+                            type="button"
+                            className={`star-btn ${(hoverRating || selectedRating) >= star ? 'filled' : ''}`}
+                            onClick={() => setSelectedRating(star)}
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        >
+                            ★
+                        </button>
+                    ))}
+                </div>
+                <p className="rating-caption">
+                    {selectedRating ? `Thanks for rating us ${selectedRating}/5!` : 'Tap a star to submit quick feedback.'}
+                </p>
+            </footer>
         </div>
     );
 }
