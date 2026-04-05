@@ -444,6 +444,21 @@ section h2 {
   font-weight: 700;
 }
 
+.architecture-image-box {
+  margin-top: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(2, 6, 23, 0.62);
+}
+
+.architecture-image-box img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  display: block;
+}
+
 .video-input {
   width: 100%;
   margin: 8px 0 12px;
