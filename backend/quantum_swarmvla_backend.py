@@ -199,7 +199,10 @@ class QuantumNeuralKernel:
 
         if not lazy.torch or lazy.offline_mode:
             if raw_image is not None:
-                arr = np.asarray(raw_image.convert('RGB'), dtype=np.float32)
+                if isinstance(raw_image, np.ndarray):
+                    arr = raw_image.astype(np.float32)
+                else:
+                    arr = np.asarray(raw_image.convert('RGB'), dtype=np.float32)
                 red = arr[:, :, 0].mean()
                 green = arr[:, :, 1].mean()
                 blue = arr[:, :, 2].mean()
@@ -344,6 +347,45 @@ def is_likely_satellite_image(image):
 
     return True
 
+
+def decode_image_from_bytes(file_bytes):
+    """
+    Decode image bytes with multiple fallbacks so the API still works when PIL
+    is unavailable on a deployment target.
+    Returns an RGB numpy array or None.
+    """
+    # 1) PIL path (preferred if available)
+    if lazy.Image is not None:
+        try:
+            image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
+            return np.array(image)
+        except Exception:
+            pass
+
+    # 2) OpenCV path
+    try:
+        import cv2
+        np_buf = np.frombuffer(file_bytes, dtype=np.uint8)
+        bgr = cv2.imdecode(np_buf, cv2.IMREAD_COLOR)
+        if bgr is not None:
+            return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    except Exception:
+        pass
+
+    # 3) imageio path
+    try:
+        import imageio.v3 as iio
+        img = iio.imread(file_bytes)
+        if img is None:
+            return None
+        if img.ndim == 2:
+            img = np.stack([img, img, img], axis=-1)
+        if img.shape[2] == 4:
+            img = img[:, :, :3]
+        return img.astype(np.uint8)
+    except Exception:
+        return None
+
 # ============================================================
 # ROUTES
 # ============================================================
@@ -377,17 +419,17 @@ def analyze_image():
         signal_key = hashlib.sha256(file_bytes).hexdigest()
         lazy.load_libraries() # Ensure libs are loaded
 
-        if not lazy.Image:
-            return jsonify({'error': 'Image decoding dependency unavailable on server.'}), 503
-        try:
-            image = lazy.Image.open(io.BytesIO(file_bytes)).convert('RGB')
-        except Exception:
+        image_arr = decode_image_from_bytes(file_bytes)
+        if image_arr is None:
             return jsonify({'error': 'Invalid or unsupported image format'}), 400
 
-        if not is_likely_satellite_image(image):
+        if not is_likely_satellite_image(image_arr):
             return jsonify({'error': 'upload correct image'}), 400
 
         if lazy.torch and lazy.transforms:
+            if not lazy.Image:
+                return jsonify({'error': 'Image processing dependency unavailable for model inference.'}), 503
+            image = lazy.Image.fromarray(image_arr).convert('RGB')
             transform = lazy.transforms.Compose([
                 lazy.transforms.Resize((224, 224)),
                 lazy.transforms.ToTensor(),
@@ -396,6 +438,7 @@ def analyze_image():
             tensor = transform(image).unsqueeze(0)
         else:
             tensor = None
+            image = image_arr
 
         kernel = get_nqk()
         label, conf = kernel.classify_classical(tensor, signal_key=signal_key, raw_image=image)
