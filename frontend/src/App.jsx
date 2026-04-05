@@ -97,7 +97,7 @@ function App() {
     };
 
     const presentationEmbedUrl = useMemo(() => {
-        const pptxPath = '/24MCS0071_RahulB_Project-review-II.pptx';
+        const pptxPath = 'frontend/src/24MCS0071_RahulB_Project-review-II.pptx';
         if (typeof window === 'undefined') return pptxPath;
         const absoluteUrl = `${window.location.origin}${pptxPath}`;
         return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absoluteUrl)}`;
