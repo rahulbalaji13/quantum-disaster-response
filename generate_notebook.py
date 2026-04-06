@@ -42,7 +42,7 @@ This notebook demonstrates the performance enhancements and architectural shifts
 
 ## Key Quantum Features:
 1. **Neural Quantum Kernel (NQK)** for classification
-2. **Quantum Byzantine Consensus** for swarm decision-making""")
+2. **Swarm Confidence Aggregation** for swarm decision-making""")
 
 add_code("""# Install Required Libraries for Colab
 !pip install qiskit matplotlib seaborn networkx pandas numpy -q""")
@@ -64,7 +64,7 @@ add_code("""# System Parameters
 metrics = {
     "Resolution (Classical vs Quantum)": "High-Res Image -> Low-Res Quantum Feature Map",
     "Processing Backbone": ["Florence-2 / ResNet", "Hybrid ResNet + NQK"],
-    "Consensus Type": ["Classical Byzantine", "Quantum Shared State Simulation"]
+    "Swarm Logic": ["Classical Networking", "Confidence Aggregation"]
 }
 
 for k, v in metrics.items():
@@ -93,12 +93,12 @@ plt.legend()
 plt.grid(True, alpha=0.3)
 plt.show()""")
 
-add_md("""## 3. Consensus Delay & Swarm Communication
-The **Quantum Byzantine Layer** models shared entanglement behavior to reach consensus faster. Let's compare time-to-consensus against swarm size.""")
+add_md("""## 3. Aggregation Delay & Swarm Communication
+The **Swarm Confidence Aggregation** averages confidence scores across quadrants, making decision times much faster than complex classical networking layers. Let's compare time-to-decision against swarm size.""")
 
 add_code("""swarm_size = np.array([5, 10, 20, 50, 100])
 
-# Classical Byzantine scales as O(N^2) or O(N) depending on algorithm
+# Classical Networking scales as O(N^2) or O(N) depending on algorithm
 classical_delay_ms = 10 * (swarm_size ** 1.5)
 
 # Quantum approaches near O(1) or O(log N) due to shared entangled state assumption
@@ -111,7 +111,7 @@ df_consensus = pd.DataFrame({
 })
 
 df_consensus.set_index('Swarm Size').plot(kind='bar', figsize=(10, 5), color=['cyan', 'magenta'])
-plt.title('Swarm Consensus Delay')
+plt.title('Swarm Aggregation Delay')
 plt.ylabel('Delay in Milliseconds')
 plt.xticks(rotation=0)
 plt.show()""")
