@@ -37,11 +37,11 @@
 **The Core Problems**:
 1.  **Computational Bottlenecks**: Calculating optimal routes for a swarm of rescue drones in real-time is computationally expensive (Traveling Salesman Problem).
 2.  **False Positives**: Classical models often confuse similar visual features (e.g., a "river" vs. a "flood") due to limited feature space mapping.
-3.  **Single Point of Failure**: Traditional centralized consensus can be compromised by faulty sensors or data corruption.
+3.  **Single Point of Failure**: A single drone's camera might be obstructed (smoke, damage), leading to false data.
 
 **Speaker Notes**:
 -   "When seconds matter, we can't afford lag. Traditional algorithms struggle to route swarms efficiently."
--   "Furthermore, a single faulty drone camera can trigger a false alarm. We need a system that is robust against 'Byzantine' faults—where components fail or lie."
+-   "Furthermore, a single faulty drone camera can trigger a false alarm. We need a system that is robust against hardware failures and visual obstruction using swarm confidence aggregation."
 
 ---
 
@@ -50,7 +50,7 @@
 ### Slide 4: Research Objectives
 **Goal**: Develop a robust, quantum-hybrid ecosystem for automated disaster response.
 1.  **Implement NQK (Neural Quantum Kernel)**: To classify disaster scenes with higher confidence using quantum feature maps.
-2.  **Develop Quantum Consensus**: To achieve fault-tolerant decision-making among simulated drone agents (Byzantine Agreement).
+2.  **Develop Swarm Aggregation**: To achieve fault-tolerant decision-making among simulated drone agents (Confidence Aggregation).
 3.  **Real-Time Action**: To bridge the gap between simulation and real-world alerts (SMS/Dashboard).
 
 **Speaker Notes**:
@@ -66,7 +66,7 @@
 2.  **Hybrid Core**:
     -   **Classical**: ResNet18 extracts visual features (Edges, textures).
     -   **Quantum**: Features are encoded into Qubits; Entanglement captures complex correlations.
-3.  **Swarm Intelligence**: Agents vote on the outcome using Quantum Consensus.
+3.  **Swarm Intelligence**: Agents vote on the outcome using Confidence Aggregation.
 4.  **Output**: Verified Alert -> SMS Dispatch.
 
 **Speaker Notes**:
@@ -82,7 +82,7 @@
 
 **Visuals**:
 -   **Left**: Disaster Input -> ResNet.
--   **Center**: The Quantum "Black Box" (NQK + Consensus).
+-   **Center**: The Quantum "Black Box" (NQK + Aggregation).
 -   **Right**: Actionable Outputs (Drones + Alerts).
 
 **Speaker Notes**:
@@ -102,13 +102,13 @@
     -   Measures the quantum state to predict class (Flood, Fire, etc.).
 -   **Why?**: Captures non-linear relationships that classical kernels miss.
 
-### Slide 8: Module 2 - Quantum Byzantine Consensus
--   **Function**: Swarm Reliability.
+### Slide 8: Module 2 - Swarm Confidence Aggregation
+-   **Function**: Swarm Reliability & Multi-Angle Verification.
 -   **Mechanism**:
-    -   Simulates 50+ drone agents.
-    -   Introduces "Malicious" agents (faulty sensors).
-    -   Uses a consensus mechanism to filter out outliers and find the "True" threat level.
--   **Result**: Prevents false alarms from triggering rescue teams.
+    -   Simulates multiple drone agents surveying the same coordinate.
+    -   Aggregates the Quantum Neural Kernel's confidence scores from each drone feed.
+    -   Uses a Weighted Average algorithm to filter out false readings and outliers.
+-   **Result**: Prevents false alarms, resulting in a highly accurate, verified threat level.
 
 ### Slide 9: Module 3 - Alert System
 -   **Alert System**:
