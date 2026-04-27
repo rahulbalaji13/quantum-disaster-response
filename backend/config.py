@@ -10,6 +10,7 @@ class Config:
     TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', 'YOUR_SID')
     TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', 'YOUR_TOKEN')
     TWILIO_PHONE = os.getenv('TWILIO_PHONE', '+1234567890')
+    TWILIO_MESSAGING_SERVICE_SID = os.getenv('TWILIO_MESSAGING_SERVICE_SID', '')
     RESCUE_TEAM_PHONES = os.getenv('RESCUE_TEAM_PHONES', '+919876543210').split(',')
     
     N_QUBITS = int(os.getenv('N_QUBITS', 4))
