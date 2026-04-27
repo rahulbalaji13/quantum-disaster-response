@@ -234,11 +234,47 @@ class SwarmAggregation:
 class AlertSystem:
     def __init__(self, config):
         self.config = config
+        self.twilio_from_phone = (config.TWILIO_PHONE or '').strip()
+        self.messaging_service_sid = (getattr(config, 'TWILIO_MESSAGING_SERVICE_SID', '') or '').strip()
         from twilio.rest import Client
         try:
-            self.client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
-        except:
+            sid = (config.TWILIO_ACCOUNT_SID or '').strip()
+            token = (config.TWILIO_AUTH_TOKEN or '').strip()
+            if not sid or not token or sid == 'YOUR_SID' or token == 'YOUR_TOKEN':
+                self.client = None
+                return
+
+            self.client = Client(sid, token)
+            self._normalize_sender_configuration()
+        except Exception:
             self.client = None
+
+    def _normalize_sender_configuration(self):
+        """
+        Ensure the configured sender can be used by this Twilio account.
+        Fallbacks:
+        1) Use Messaging Service SID if present.
+        2) Validate the configured From number against account incoming numbers.
+        3) If mismatched, auto-select the first provisioned number on this account.
+        """
+        if self.messaging_service_sid:
+            return
+
+        if not self.twilio_from_phone:
+            return
+
+        try:
+            incoming_numbers = self.client.incoming_phone_numbers.list(limit=20)
+            owned_numbers = {record.phone_number for record in incoming_numbers}
+            if owned_numbers and self.twilio_from_phone not in owned_numbers:
+                fallback_sender = sorted(owned_numbers)[0]
+                print(
+                    "WARNING: TWILIO_PHONE is not provisioned on this account. "
+                    f"Using fallback sender: {fallback_sender}"
+                )
+                self.twilio_from_phone = fallback_sender
+        except Exception as e:
+            print(f"WARNING: Unable to verify Twilio sender number ({e}). Using configured sender as-is.")
 
     def send_alert(self, info):
         if not self.client:
@@ -258,7 +294,13 @@ class AlertSystem:
             if not to_phone:
                 continue
             try:
-                self.client.messages.create(body=body, from_=self.config.TWILIO_PHONE, to=to_phone)
+                message_payload = {'body': body, 'to': to_phone}
+                if self.messaging_service_sid:
+                    message_payload['messaging_service_sid'] = self.messaging_service_sid
+                else:
+                    message_payload['from_'] = self.twilio_from_phone
+
+                self.client.messages.create(**message_payload)
                 sent_to.append(to_phone)
             except Exception as e:
                 failures.append({'to': to_phone, 'error': str(e)})
